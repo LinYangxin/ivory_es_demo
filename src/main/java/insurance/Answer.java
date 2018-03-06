@@ -1,3 +1,5 @@
+package insurance;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;

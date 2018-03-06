@@ -1,5 +1,6 @@
+package insurance;
+
 import org.elasticsearch.ElasticsearchStatusException;
-import org.elasticsearch.action.admin.indices.close.CloseIndexRequest;
 import org.elasticsearch.action.admin.indices.open.OpenIndexRequest;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;
@@ -7,7 +8,6 @@ import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.common.unit.Fuzziness;
 import org.elasticsearch.index.query.MatchQueryBuilder;
 import org.elasticsearch.index.query.MultiMatchQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -16,6 +16,7 @@ import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import pojo.QA;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -27,8 +28,8 @@ public class OperateData {
 
     //{other-insurance=1, medicare-insurance=1, disability-insurance=1, health-insurance=1, home-insurance=1, long-term-care-insurance=1, annuities=1, auto-insurance=1, critical-illness-insurance=1, life-insurance=1, retirement-plans=1, renters-insurance=1}
 
-    public static ArrayList<QAE> initQuestionDataByJson(String path) {
-        ArrayList<QAE> result = new ArrayList<QAE>();
+    public static ArrayList<QA> initDataByJson(String path) {
+        ArrayList<QA> result = new ArrayList<QA>();
         try {
             BufferedReader bufferedReader = new BufferedReader(new FileReader(path));
             String jsonData = bufferedReader.readLine();
@@ -36,13 +37,11 @@ public class OperateData {
             JSONArray question_id = jsonObject.names();//获取每个问题的ID
             for (int i = 0; i < question_id.length(); i++) {
                 JSONObject tmp = jsonObject.getJSONObject(question_id.getString(i));
-                String question = tmp.getString("zh");//question->zh
-              //  String answer = tmp.getJSONObject("evidences").getJSONObject(question_id.getString(i) + "#00").getString("answer");
-              //  String evidence = tmp.getJSONObject("evidences").getJSONObject(question_id.getString(i) + "#00").getString("evidence");
-                String answer = tmp.getString("answers");
-                String domain = tmp.getString("domain");
-                QAE qae = new QAE(question, answer, domain,question_id.getString(i));
-                result.add(qae);
+                String question = tmp.getString("question").trim();
+                String answer = tmp.getString("answer").trim();
+                String lable = tmp.getString("lable").trim();
+                QA qa = new QA(question, answer,lable);
+                result.add(qa);
             }
         } catch (FileNotFoundException e) {
             e.printStackTrace();
@@ -54,43 +53,9 @@ public class OperateData {
         return result;
     }
 
-    public static void addQuestionDoc(RestHighLevelClient client, ArrayList<QAE> qaes) {
+    public static void addDoc(RestHighLevelClient client, ArrayList<QA> qaes) {
         for (int i = 0; i < qaes.size(); i++) {
-            IndexRequest indexRequest = new IndexRequest("insurance", "insurance_question_answer",qaes.get(i).getId()).source(qaes.get(i).getMap());
-            try {
-                System.out.println("正在添加第" + i + "/" + qaes.size() + "个");
-                IndexResponse indexResponse = client.index(indexRequest);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-    public static ArrayList<Answer> initAnswerByJson(String path) {
-        ArrayList<Answer> result = new ArrayList<Answer>();
-        try {
-            BufferedReader bufferedReader = new BufferedReader(new FileReader(path));
-            String jsonData = bufferedReader.readLine();
-            JSONObject jsonObject = new JSONObject(jsonData);
-            JSONArray question_id = jsonObject.names();//获取每个问题的ID
-            for (int i = 0; i < question_id.length(); i++) {
-                JSONObject tmp = jsonObject.getJSONObject(question_id.getString(i));
-                String answer = tmp.getString("zh");
-                Answer ans = new Answer(answer,question_id.getString(i));
-                result.add(ans);
-            }
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-        return result;
-    }
-
-    public static void addAnswerDoc(RestHighLevelClient client, ArrayList<Answer> qaes) {
-        for (int i = 0; i < qaes.size(); i++) {
-            IndexRequest indexRequest = new IndexRequest("answers", "insurance_answer",qaes.get(i).getId()).source(qaes.get(i).getMap());
+            IndexRequest indexRequest = new IndexRequest("question_answer", "qa").source(qaes.get(i).getMap());
             try {
                 System.out.println("正在添加第" + i + "/" + qaes.size() + "个");
                 IndexResponse indexResponse = client.index(indexRequest);
@@ -145,14 +110,14 @@ public class OperateData {
             JSONObject result = response.getJSONObject("_source");
             String result_question = result.getString("question");
             String result_answer = result.getString("answer");
-            String result_evidence = result.getString("evidence");
+            String result_lable = result.getString("lable");
             if (result_answer == "[\"no_answer\"]")
                 System.out.println("查无答案");
             else {
                 System.out.println("问题：" + result_question);
                 System.out.println("得分：" + score);
                 System.out.println("答案：" + result_answer);
-                System.out.println("理由：" + result_evidence);
+                System.out.println("分类：" + result_lable);
             }
         } catch (JSONException e) {
             // e.printStackTrace();
