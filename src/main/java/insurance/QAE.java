@@ -1,32 +1,41 @@
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class QAE {
     private String question;
     private String answer;
-    private String evidence;
-
+    private String domain;
+    private String id;
     public QAE(){
 
     }
-    public QAE(String question,String answer,String evidence){
+    public QAE(String question,String answer,String domain,String id){
         setQuestion(question);
         setAnswer(answer);
-        setEvidence(evidence);
+        setDomain(domain);
+        setId(id);
     }
     public Map<String,Object> getMap(){
         Map<String,Object> jsonMap = new HashMap<String,Object>();
         jsonMap.put("question",question);
         jsonMap.put("answer",answer);
-        jsonMap.put("evidence",evidence);
+        jsonMap.put("domain",domain);
+//        jsonMap.put("id",id);
         return jsonMap;
     }
+
+    public String getId() {
+        return id;
+    }
+
     public String getAnswer() {
         return answer;
     }
 
-    public String getEvidence() {
-        return evidence;
+    public String getDomain() {
+        return domain;
     }
 
     public String getQuestion() {
@@ -41,7 +50,11 @@ public class QAE {
         this.question = question;
     }
 
-    public void setEvidence(String evidence) {
-        this.evidence = evidence;
+    public void setDomain(String domain) {
+        this.domain = domain;
+    }
+
+    public void setId(String id) {
+        this.id = id;
     }
 }

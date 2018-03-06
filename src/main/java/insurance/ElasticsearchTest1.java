@@ -2,7 +2,12 @@ import org.apache.http.HttpHost;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Scanner;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ElasticsearchTest1 {
     public final static String HOST = "127.0.0.1";//本地地址
@@ -16,12 +21,8 @@ public class ElasticsearchTest1 {
         RestHighLevelClient client = new RestHighLevelClient(RestClient.builder(new HttpHost(HOST, PORT, SCHEME)));
 
         //DO SOMETHING START
-        String question = null;
-        Scanner in = new Scanner(System.in);
-        question = in.nextLine();
-        String temp = OperateData.doSearch(client,"qa","question",question);
-        OperateData.printData(temp);
-
+        ArrayList<Answer> answers = OperateData.initAnswerByJson("C:\\Users\\user\\Desktop\\answers.json");
+        OperateData.addAnswerDoc(client,answers);
         //DO SOMETHING DONE
 
         //cloes the client

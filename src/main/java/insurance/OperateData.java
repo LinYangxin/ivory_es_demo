@@ -24,25 +24,26 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 public class OperateData {
-    public static ArrayList<QAE> initDataByJson(String path) {
-        //"C:\\Users\\user\\Downloads\\WebQA.v1.0\\me_test.ann.json"
+
+    //{other-insurance=1, medicare-insurance=1, disability-insurance=1, health-insurance=1, home-insurance=1, long-term-care-insurance=1, annuities=1, auto-insurance=1, critical-illness-insurance=1, life-insurance=1, retirement-plans=1, renters-insurance=1}
+
+    public static ArrayList<QAE> initQuestionDataByJson(String path) {
         ArrayList<QAE> result = new ArrayList<QAE>();
         try {
             BufferedReader bufferedReader = new BufferedReader(new FileReader(path));
             String jsonData = bufferedReader.readLine();
             JSONObject jsonObject = new JSONObject(jsonData);
             JSONArray question_id = jsonObject.names();//获取每个问题的ID
-//            JSONObject temp = jsonObject.getJSONObject("Q_ANN_TST_002544");
-//            System.out.println(temp.toString());
             for (int i = 0; i < question_id.length(); i++) {
                 JSONObject tmp = jsonObject.getJSONObject(question_id.getString(i));
-                String question = tmp.getString("question");
-                String answer = tmp.getJSONObject("evidences").getJSONObject(question_id.getString(i) + "#00").getString("answer");
-                String evidence = tmp.getJSONObject("evidences").getJSONObject(question_id.getString(i) + "#00").getString("evidence");
-                QAE qae = new QAE(question, answer, evidence);
+                String question = tmp.getString("zh");//question->zh
+              //  String answer = tmp.getJSONObject("evidences").getJSONObject(question_id.getString(i) + "#00").getString("answer");
+              //  String evidence = tmp.getJSONObject("evidences").getJSONObject(question_id.getString(i) + "#00").getString("evidence");
+                String answer = tmp.getString("answers");
+                String domain = tmp.getString("domain");
+                QAE qae = new QAE(question, answer, domain,question_id.getString(i));
                 result.add(qae);
             }
-//            System.out.println(result.get(0).getQuestion());
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {
@@ -53,9 +54,43 @@ public class OperateData {
         return result;
     }
 
-    public static void addDoc(RestHighLevelClient client, ArrayList<QAE> qaes) {
+    public static void addQuestionDoc(RestHighLevelClient client, ArrayList<QAE> qaes) {
         for (int i = 0; i < qaes.size(); i++) {
-            IndexRequest indexRequest = new IndexRequest("qa", "question_answer").source(qaes.get(i).getMap());
+            IndexRequest indexRequest = new IndexRequest("insurance", "insurance_question_answer",qaes.get(i).getId()).source(qaes.get(i).getMap());
+            try {
+                System.out.println("正在添加第" + i + "/" + qaes.size() + "个");
+                IndexResponse indexResponse = client.index(indexRequest);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+    public static ArrayList<Answer> initAnswerByJson(String path) {
+        ArrayList<Answer> result = new ArrayList<Answer>();
+        try {
+            BufferedReader bufferedReader = new BufferedReader(new FileReader(path));
+            String jsonData = bufferedReader.readLine();
+            JSONObject jsonObject = new JSONObject(jsonData);
+            JSONArray question_id = jsonObject.names();//获取每个问题的ID
+            for (int i = 0; i < question_id.length(); i++) {
+                JSONObject tmp = jsonObject.getJSONObject(question_id.getString(i));
+                String answer = tmp.getString("zh");
+                Answer ans = new Answer(answer,question_id.getString(i));
+                result.add(ans);
+            }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    public static void addAnswerDoc(RestHighLevelClient client, ArrayList<Answer> qaes) {
+        for (int i = 0; i < qaes.size(); i++) {
+            IndexRequest indexRequest = new IndexRequest("answers", "insurance_answer",qaes.get(i).getId()).source(qaes.get(i).getMap());
             try {
                 System.out.println("正在添加第" + i + "/" + qaes.size() + "个");
                 IndexResponse indexResponse = client.index(indexRequest);
